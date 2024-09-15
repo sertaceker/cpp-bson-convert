@@ -1,0 +1,12 @@
+{
+  "name" : "cpp-bson-convert",
+  "version-string" : "1.0.0",
+  "builtin-baseline" : "df3e0e17e988a43a1269ff00af7e8b5ef2f9a471",
+  "dependencies" : [ {
+    "name" : "mongo-cxx-driver",
+    "version>=" : "3.10.2"
+  }, {
+    "name" : "gtest",
+    "version>=" : "1.15.2"
+  } ]
+}
