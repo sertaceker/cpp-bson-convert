@@ -239,11 +239,11 @@ return instance;                                        \
      * @param value Value of the member
      */
     template <typename T>
-    void serializeMember(bsoncxx::v_noabi::builder::basic::document& doc, const std::string& key, const std::optional<T>& value)
+    std::enable_if_t<is_primitive_v<T>> serializeMember(bsoncxx::v_noabi::builder::basic::document& doc, const std::string& key, const std::optional<T>& value)
     {
         if (value.has_value())
         {
-            serializeMember(doc, key, value.value());
+            doc.append(bsoncxx::builder::basic::kvp(key, value.value()));
         }
     }
 
@@ -284,6 +284,48 @@ return instance;                                        \
     }
 
     /**
+     * @brief Serialize a primitive optional vector member to a BSON document
+     * @tparam T Type of the member
+     * @param doc BSON document to serialize to
+     * @param key Key of the member in the BSON document
+     * @param value Value of the member
+     */
+    template <typename T>
+    std::enable_if_t<is_primitive_v<T>> serializeMember(bsoncxx::v_noabi::builder::basic::document& doc, const std::string& key, const std::optional<std::vector<T>>& value)
+    {
+        if (value.has_value())
+        {
+            bsoncxx::v_noabi::builder::basic::array arr;
+            for (const auto& el : value.value())
+            {
+                arr.append(el);
+            }
+            doc.append(bsoncxx::builder::basic::kvp(key, arr));
+        }
+    }
+
+    /**
+     * @brief Serialize a non primitive optional vector member to a BSON document
+     * @tparam T Type of the member
+     * @param doc BSON document to serialize to
+     * @param key Key of the member in the BSON document
+     * @param value Value of the member
+     */
+    template <typename T>
+    std::enable_if_t<!is_primitive_v<T>> serializeMember(bsoncxx::v_noabi::builder::basic::document& doc, const std::string& key, const std::optional<std::vector<T>>& value)
+    {
+        if (value.has_value())
+        {
+            bsoncxx::v_noabi::builder::basic::array arr;
+            for (const auto& el : value.value())
+            {
+                arr.append(T::toBSON(el).view());
+            }
+            doc.append(bsoncxx::builder::basic::kvp(key, arr));
+        }
+    }
+
+    /**
      * @brief Serialize a class member to a BSON document
      * @tparam T Type of the member
      * @param doc BSON document to serialize to
@@ -294,6 +336,22 @@ return instance;                                        \
     std::enable_if_t<!is_primitive_v<T> && !is_std_vector_v<T> && !std::__is_optional_v<T>> serializeMember(bsoncxx::v_noabi::builder::basic::document& doc, const std::string& key, const T& value)
     {
         doc.append(bsoncxx::builder::basic::kvp(key, T::toBSON(value).view()));
+    }
+
+    /**
+     * @brief Serialize an optional member to a BSON document
+     * @tparam T Type of the member
+     * @param doc BSON document to serialize to
+     * @param key Key of the member in the BSON document
+     * @param value Value of the member
+     */
+    template <typename T>
+    std::enable_if_t<!is_primitive_v<T>> serializeMember(bsoncxx::v_noabi::builder::basic::document& doc, const std::string& key, const std::optional<T>& value)
+    {
+        if (value.has_value())
+        {
+            serializeMember(doc, key, value.value());
+        }
     }
 
 

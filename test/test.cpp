@@ -424,3 +424,80 @@ TEST(DeserializationTest, DeserializeMembers)
     ASSERT_EQ(optionalInt, deserializedOptionalInt);
     ASSERT_EQ(optionalString, deserializedOptionalString);
 }
+
+TEST(OptionalClassTest, Serialization)
+{
+    struct OptionalClass
+    {
+        struct Inner
+        {
+            int x;
+            int y;
+
+            BSON_DEFINE_TYPE(Inner, x, y)
+        };
+
+        std::optional<int> optionalInt;
+        std::optional<std::string> optionalString;
+        std::optional<std::vector<std::string>> optionalStringArray;
+        std::optional<Inner> optionalInner;
+
+        BSON_DEFINE_TYPE(OptionalClass, optionalInt, optionalString, optionalStringArray, optionalInner)
+    };
+
+    OptionalClass optionalClass;
+    optionalClass.optionalInt = 42;
+    optionalClass.optionalString = "Optional String";
+    optionalClass.optionalStringArray = std::vector<std::string>{"one", "two", "three", "four", "five"};
+    optionalClass.optionalInner = OptionalClass::Inner{42, 24};
+
+    const auto bson = OptionalClass::toBSON(optionalClass);
+    auto view = bson.view();
+
+    ASSERT_EQ(optionalClass.optionalInt, view["optionalInt"].get_int32().value);
+    ASSERT_EQ(optionalClass.optionalString, view["optionalString"].get_string().value);
+    const auto optionalVectorString = bson["optionalStringArray"].get_array().value;
+    for (size_t i = 0; i < optionalClass.optionalStringArray->size(); ++i)
+    {
+        ASSERT_EQ(optionalClass.optionalStringArray.value()[i], std::string(optionalVectorString[i].get_string().value));
+    }
+    const auto optionalInner = bson["optionalInner"].get_document().value;
+    ASSERT_EQ(optionalClass.optionalInner->x, optionalInner["x"].get_int32().value);
+    ASSERT_EQ(optionalClass.optionalInner->y, optionalInner["y"].get_int32().value);
+}
+
+TEST(OptionalClassTest, Deserialization)
+{
+    struct OptionalClass
+    {
+        struct Inner
+        {
+            int x;
+            int y;
+
+            BSON_DEFINE_TYPE(Inner, x, y)
+        };
+
+        std::optional<int> optionalInt;
+        std::optional<std::string> optionalString;
+        std::optional<std::vector<std::string>> optionalStringArray;
+        std::optional<Inner> optionalInner;
+
+        BSON_DEFINE_TYPE(OptionalClass, optionalInt, optionalString, optionalStringArray, optionalInner)
+    };
+
+    OptionalClass optionalClass;
+    optionalClass.optionalInt = 42;
+    optionalClass.optionalString = "Optional String";
+    optionalClass.optionalStringArray = std::vector<std::string>{"one", "two", "three", "four", "five"};
+    optionalClass.optionalInner = OptionalClass::Inner{42, 24};
+
+    const auto bson = OptionalClass::toBSON(optionalClass);
+    const auto deserialized = OptionalClass::fromBSON(bson);
+
+    ASSERT_EQ(optionalClass.optionalInt, deserialized.optionalInt);
+    ASSERT_EQ(optionalClass.optionalString, deserialized.optionalString);
+    ASSERT_EQ(optionalClass.optionalStringArray, deserialized.optionalStringArray);
+    ASSERT_EQ(optionalClass.optionalInner->x, deserialized.optionalInner->x);
+    ASSERT_EQ(optionalClass.optionalInner->y, deserialized.optionalInner->y);
+}
