@@ -1,7 +1,7 @@
 /*
 
 Modern Bson Serialization/Deserialization library for C++ (17+)
-version 1.1.0
+version 1.2.0
 https://github.com/sertaceker/cpp-bson-convert
 
 If you encounter any issues, please submit a ticket at https://github.com/sertaceker/cpp-bson-convert/issues
@@ -46,8 +46,7 @@ SOFTWARE.
 #include <vector>
 
 
-namespace sselibs
-{
+
 #pragma region typetraits
 
     template <typename T>
@@ -85,7 +84,7 @@ namespace sselibs
     {
         if constexpr (std::__is_optional_v<T>)
         {
-            if (element)
+            if (element && element.type() != bsoncxx::v_noabi::type::k_null)
             {
                 return get<typename T::value_type>(element);
             }
@@ -217,7 +216,7 @@ return instance;                                        \
     template <typename T>
     std::enable_if_t<is_primitive_v<T>> serializeMember(bsoncxx::v_noabi::builder::basic::document& doc, const std::string& key, const T& value)
     {
-        doc.append(bsoncxx::builder::basic::kvp(key, value));
+        doc.append(bsoncxx::v_noabi::builder::basic::kvp(key, value));
     }
 
     /**
@@ -228,7 +227,7 @@ return instance;                                        \
      */
     inline void serializeMember(bsoncxx::v_noabi::builder::basic::document& doc, const std::string& key, const std::chrono::system_clock::time_point& value)
     {
-        doc.append(bsoncxx::builder::basic::kvp(key, bsoncxx::v_noabi::types::b_date{value}));
+        doc.append(bsoncxx::v_noabi::builder::basic::kvp(key, bsoncxx::v_noabi::types::b_date{value}));
     }
 
     /**
@@ -243,8 +242,11 @@ return instance;                                        \
     {
         if (value.has_value())
         {
-            doc.append(bsoncxx::builder::basic::kvp(key, value.value()));
+            doc.append(bsoncxx::v_noabi::builder::basic::kvp(key, value.value()));
+            return;
         }
+
+        doc.append(bsoncxx::v_noabi::builder::basic::kvp(key, bsoncxx::v_noabi::types::b_null{}));
     }
 
     /**
@@ -262,7 +264,7 @@ return instance;                                        \
         {
             arr.append(el);
         }
-        doc.append(bsoncxx::builder::basic::kvp(key, arr));
+        doc.append(bsoncxx::v_noabi::builder::basic::kvp(key, arr));
     }
 
     /**
@@ -280,7 +282,7 @@ return instance;                                        \
         {
             arr.append(T::toBSON(el).view());
         }
-        doc.append(bsoncxx::builder::basic::kvp(key, arr));
+        doc.append(bsoncxx::v_noabi::builder::basic::kvp(key, arr));
     }
 
     /**
@@ -300,8 +302,11 @@ return instance;                                        \
             {
                 arr.append(el);
             }
-            doc.append(bsoncxx::builder::basic::kvp(key, arr));
+            doc.append(bsoncxx::v_noabi::builder::basic::kvp(key, arr));
+            return;
         }
+
+        doc.append(bsoncxx::v_noabi::builder::basic::kvp(key, bsoncxx::v_noabi::types::b_null{}));
     }
 
     /**
@@ -321,8 +326,10 @@ return instance;                                        \
             {
                 arr.append(T::toBSON(el).view());
             }
-            doc.append(bsoncxx::builder::basic::kvp(key, arr));
+            doc.append(bsoncxx::v_noabi::builder::basic::kvp(key, arr));
+            return;
         }
+        doc.append(bsoncxx::v_noabi::builder::basic::kvp(key, bsoncxx::v_noabi::types::b_null{}));
     }
 
     /**
@@ -335,7 +342,7 @@ return instance;                                        \
     template <typename T>
     std::enable_if_t<!is_primitive_v<T> && !is_std_vector_v<T> && !std::__is_optional_v<T>> serializeMember(bsoncxx::v_noabi::builder::basic::document& doc, const std::string& key, const T& value)
     {
-        doc.append(bsoncxx::builder::basic::kvp(key, T::toBSON(value).view()));
+        doc.append(bsoncxx::v_noabi::builder::basic::kvp(key, T::toBSON(value).view()));
     }
 
     /**
@@ -351,7 +358,9 @@ return instance;                                        \
         if (value.has_value())
         {
             serializeMember(doc, key, value.value());
+            return;
         }
+        doc.append(bsoncxx::v_noabi::builder::basic::kvp(key, bsoncxx::v_noabi::types::b_null{}));
     }
 
 
@@ -366,7 +375,7 @@ __VA_OPT__(OBSTRUCT(RECURSE_TO_BSON)()(class_name, __VA_ARGS__))
 
 #define BSON_DEFINE_TO_BSON(class_name, ...)           \
 static bsoncxx::document::value toBSON(const class_name& obj) { \
-bsoncxx::builder::basic::document doc{}; \
+bsoncxx::v_noabi::builder::basic::document doc{}; \
 EVAL(BSON_TO_BSON_1(class_name, __VA_ARGS__)) \
 return doc.extract(); \
 }
@@ -376,7 +385,6 @@ BSON_DEFINE_FROM_BSON(class_name, __VA_ARGS__) \
 BSON_DEFINE_TO_BSON(class_name, __VA_ARGS__)
 
 #pragma endregion
-};
 
 
 #endif //CPP_BSON_CONVERT_HPP

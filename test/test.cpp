@@ -3,8 +3,6 @@
 #include <gtest/gtest.h>
 #include <bsoncxx/json.hpp>
 
-using namespace sselibs;
-
 TEST(PrimitiveTypeTest, Deserialization)
 {
     struct AllTypes
@@ -93,7 +91,7 @@ TEST(PrimitiveTypeTest, Serialization)
     }
     ASSERT_TRUE(view.find("optionalInt") != view.end());
     ASSERT_EQ(allTypes.optionalInt, bson["optionalInt"].get_int32().value);
-    ASSERT_TRUE(view.find("optionalString") == view.end());
+    ASSERT_EQ(allTypes.optionalString, std::nullopt);
 
 }
 
@@ -294,7 +292,7 @@ TEST(PrimitiveTypeTest, SerializationWithEmptyPrimitiveArray)
     }
     ASSERT_TRUE(view.find("optionalInt") != view.end());
     ASSERT_EQ(allTypes.optionalInt, bson["optionalInt"].get_int32().value);
-    ASSERT_TRUE(view.find("optionalString") == view.end());
+    ASSERT_EQ(allTypes.optionalString, std::nullopt);
 }
 
 TEST(SerializationTest, SerializeMembers)
@@ -500,4 +498,64 @@ TEST(OptionalClassTest, Deserialization)
     ASSERT_EQ(optionalClass.optionalStringArray, deserialized.optionalStringArray);
     ASSERT_EQ(optionalClass.optionalInner->x, deserialized.optionalInner->x);
     ASSERT_EQ(optionalClass.optionalInner->y, deserialized.optionalInner->y);
+}
+
+TEST(Optional, Serialization)
+{
+    struct OptionalClass
+    {
+        struct Inner
+        {
+            int x;
+            int y;
+
+            BSON_DEFINE_TYPE(Inner, x, y)
+        };
+
+        std::optional<int> optionalInt;
+        std::optional<std::string> optionalString;
+        std::optional<std::vector<std::string>> optionalStringArray;
+        std::optional<Inner> optionalInner;
+
+        BSON_DEFINE_TYPE(OptionalClass, optionalInt, optionalString, optionalStringArray, optionalInner)
+    };
+
+    OptionalClass optionalClass{};
+    const auto bson = OptionalClass::toBSON(optionalClass);
+
+    ASSERT_EQ(bson["optionalInt"].type(), bsoncxx::type::k_null);
+    ASSERT_EQ(bson["optionalString"].type(), bsoncxx::type::k_null);
+    ASSERT_EQ(bson["optionalStringArray"].type(), bsoncxx::type::k_null);
+    ASSERT_EQ(bson["optionalInner"].type(), bsoncxx::type::k_null);
+}
+
+TEST(Optional, Deserialization)
+{
+    struct OptionalClass
+    {
+        struct Inner
+        {
+            int x;
+            int y;
+
+            BSON_DEFINE_TYPE(Inner, x, y)
+        };
+
+        std::optional<int> optionalInt;
+        std::optional<std::string> optionalString;
+        std::optional<std::vector<std::string>> optionalStringArray;
+        std::optional<Inner> optionalInner;
+
+        BSON_DEFINE_TYPE(OptionalClass, optionalInt, optionalString, optionalStringArray, optionalInner)
+    };
+
+    OptionalClass optionalClass{};
+    const auto bson = OptionalClass::toBSON(optionalClass);
+    const auto deserialized = OptionalClass::fromBSON(bson);
+
+    ASSERT_EQ(deserialized.optionalInt, std::nullopt);
+    ASSERT_EQ(deserialized.optionalString, std::nullopt);
+    ASSERT_EQ(deserialized.optionalStringArray, std::nullopt);
+    ASSERT_EQ(deserialized.optionalInner, std::nullopt);
+
 }
