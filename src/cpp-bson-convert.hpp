@@ -1,7 +1,7 @@
 /*
 
 Modern Bson Serialization/Deserialization library for C++ (17+)
-version 1.2.1
+version 1.2.2
 https://github.com/sertaceker/cpp-bson-convert
 
 If you encounter any issues, please submit a ticket at https://github.com/sertaceker/cpp-bson-convert/issues
@@ -251,8 +251,6 @@ return instance;                                        \
         {
             doc.append(bsoncxx::v_noabi::builder::basic::kvp(key, bsoncxx::v_noabi::types::b_null{}));
         }
-
-        doc.append(bsoncxx::v_noabi::builder::basic::kvp(key, bsoncxx::v_noabi::types::b_null{}));
     }
 
     /**
