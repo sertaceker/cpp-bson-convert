@@ -1,7 +1,7 @@
 /*
 
 Modern Bson Serialization/Deserialization library for C++ (17+)
-version 1.2.2
+version 1.3.0
 https://github.com/sertaceker/cpp-bson-convert
 
 If you encounter any issues, please submit a ticket at https://github.com/sertaceker/cpp-bson-convert/issues
@@ -64,6 +64,12 @@ SOFTWARE.
 
     template <typename T>
     inline constexpr bool is_primitive_v = std::is_same_v<T, std::string> || std::is_arithmetic_v<T> || std::is_same_v<T, bsoncxx::v_noabi::oid>;
+
+    template <typename T>
+    inline constexpr bool is_not_primitive_and_not_vector_v = !is_primitive_v<T> && !is_std_vector_v<T>;
+
+    template <typename T>
+    inline constexpr bool is_not_primitive_and_vector_v = !is_primitive_v<T> && is_std_vector_v<T>;
 
     template <class>
     inline constexpr bool always_false_v = false;
@@ -279,12 +285,47 @@ return instance;                                        \
      * @param value Value of the member
      */
     template <typename T>
-    std::enable_if_t<!is_primitive_v<T>> serializeMember(bsoncxx::v_noabi::builder::basic::document& doc, const std::string& key, const std::vector<T>& value)
+    std::enable_if_t<is_not_primitive_and_not_vector_v<T>> serializeMember(bsoncxx::v_noabi::builder::basic::document& doc, const std::string& key, const std::vector<T>& value)
     {
         bsoncxx::v_noabi::builder::basic::array arr;
         for (const auto& el : value)
         {
             arr.append(T::toBSON(el).view());
+        }
+        doc.append(bsoncxx::v_noabi::builder::basic::kvp(key, arr));
+    }
+
+    /**
+     * @brief Serialize a non primitive vector in vector member to a BSON document
+     * @tparam T Type of the member
+     * @param doc BSON document to serialize to
+     * @param key Key of the member in the BSON document
+     * @param value Value of the member
+     */
+    template <typename T>
+    std::enable_if_t<is_not_primitive_and_vector_v<T>> serializeMember(bsoncxx::v_noabi::builder::basic::document& doc, const std::string& key, const std::vector<T>& value)
+    {
+        bsoncxx::v_noabi::builder::basic::array arr;
+        for (const auto& el : value)
+        {
+            if constexpr (is_primitive_v<typename T::value_type>)
+            {
+                bsoncxx::v_noabi::builder::basic::array innerArr;
+                for (const auto& innerEl : el)
+                {
+                    innerArr.append(innerEl);
+                }
+                arr.append(innerArr);
+            }
+            else
+            {
+                bsoncxx::v_noabi::builder::basic::array innerArr;
+                for (const auto& innerEl : el)
+                {
+                    innerArr.append(T::value_type::toBSON(innerEl).view());
+                }
+                arr.append(innerArr);
+            }
         }
         doc.append(bsoncxx::v_noabi::builder::basic::kvp(key, arr));
     }
