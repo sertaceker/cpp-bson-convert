@@ -92,7 +92,6 @@ TEST(PrimitiveTypeTest, Serialization)
     ASSERT_TRUE(view.find("optionalInt") != view.end());
     ASSERT_EQ(allTypes.optionalInt, bson["optionalInt"].get_int32().value);
     ASSERT_EQ(allTypes.optionalString, std::nullopt);
-
 }
 
 TEST(NestedClassTest, Deserialization)
@@ -153,7 +152,6 @@ TEST(NestedClassTest, Serialization)
     ASSERT_EQ(nestedClass.name, std::string(bson["name"].get_string().value));
     ASSERT_EQ(nestedClass.inner.x, bson["inner"]["x"].get_int32().value);
     ASSERT_EQ(nestedClass.inner.y, bson["inner"]["y"].get_int32().value);
-
 }
 
 TEST(NestedClassArrayTest, Deserialization)
@@ -187,7 +185,6 @@ TEST(NestedClassArrayTest, Deserialization)
     ASSERT_EQ(nestedClass.inner[1].x, deserialized.inner[1].x);
     ASSERT_EQ(nestedClass.inner[1].y, deserialized.inner[1].y);
     ASSERT_EQ(nestedClass.name, deserialized.name);
-
 }
 
 TEST(NestedClassArrayTest, Serialization)
@@ -220,7 +217,6 @@ TEST(NestedClassArrayTest, Serialization)
     ASSERT_EQ(nestedClass.inner[0].y, inner[0]["y"].get_int32().value);
     ASSERT_EQ(nestedClass.inner[1].x, inner[1]["x"].get_int32().value);
     ASSERT_EQ(nestedClass.inner[1].y, inner[1]["y"].get_int32().value);
-
 }
 
 TEST(NestedClassTest, SerializationWithEmptyInner)
@@ -557,7 +553,6 @@ TEST(Optional, Deserialization)
     ASSERT_EQ(deserialized.optionalString, std::nullopt);
     ASSERT_EQ(deserialized.optionalStringArray, std::nullopt);
     ASSERT_EQ(deserialized.optionalInner, std::nullopt);
-
 }
 
 TEST(VectorInVectorPrimitive, Serialization)
@@ -754,5 +749,205 @@ TEST(VectorInVectorClass, Deserialization)
     ASSERT_EQ(vecInVec.doubleList[2][0].innerDoubleList[2][0], deserialized.doubleList[2][0].innerDoubleList[2][0]);
     ASSERT_EQ(vecInVec.doubleList[2][0].innerDoubleList[2][1], deserialized.doubleList[2][0].innerDoubleList[2][1]);
     ASSERT_EQ(vecInVec.doubleList[2][0].innerDoubleList[2][2], deserialized.doubleList[2][0].innerDoubleList[2][2]);
+}
 
+
+TEST(OptionalVectorInVectorPrimitive, Serialization)
+{
+    struct VectorInVectorClass
+    {
+        std::optional<std::vector<std::vector<double>>> doubleList;
+
+        BSON_DEFINE_TYPE(VectorInVectorClass, doubleList)
+    };
+
+    VectorInVectorClass vecInVec;
+    vecInVec.doubleList = std::vector<std::vector<double>>{{1.1, 2.2, 3.3}, {4.4, 5.5, 6.6}, {7.7, 8.8, 9.9}};
+
+    const auto bson = VectorInVectorClass::toBSON(vecInVec);
+    ASSERT_EQ(vecInVec.doubleList->at(0)[0], bson["doubleList"][0][0].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(0)[1], bson["doubleList"][0][1].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(0)[2], bson["doubleList"][0][2].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(1)[0], bson["doubleList"][1][0].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(1)[1], bson["doubleList"][1][1].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(1)[2], bson["doubleList"][1][2].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(2)[0], bson["doubleList"][2][0].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(2)[1], bson["doubleList"][2][1].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(2)[2], bson["doubleList"][2][2].get_double().value);
+}
+
+
+TEST(OptionalVectorInVectorPrimitive, Deserialization)
+{
+    struct VectorInVectorClass
+    {
+        std::optional<std::vector<std::vector<double>>> doubleList;
+
+        BSON_DEFINE_TYPE(VectorInVectorClass, doubleList)
+    };
+
+    VectorInVectorClass vecInVec;
+    vecInVec.doubleList = std::vector<std::vector<double>>{{1.1, 2.2, 3.3}, {4.4, 5.5, 6.6}, {7.7, 8.8, 9.9}};
+
+    const auto bson = VectorInVectorClass::toBSON(vecInVec);
+    const auto deserialized = VectorInVectorClass::fromBSON(bson);
+    ASSERT_EQ(vecInVec.doubleList->at(0)[0], deserialized.doubleList->at(0)[0]);
+    ASSERT_EQ(vecInVec.doubleList->at(0)[1], deserialized.doubleList->at(0)[1]);
+    ASSERT_EQ(vecInVec.doubleList->at(0)[2], deserialized.doubleList->at(0)[2]);
+    ASSERT_EQ(vecInVec.doubleList->at(1)[0], deserialized.doubleList->at(1)[0]);
+    ASSERT_EQ(vecInVec.doubleList->at(1)[1], deserialized.doubleList->at(1)[1]);
+    ASSERT_EQ(vecInVec.doubleList->at(1)[2], deserialized.doubleList->at(1)[2]);
+    ASSERT_EQ(vecInVec.doubleList->at(2)[0], deserialized.doubleList->at(2)[0]);
+    ASSERT_EQ(vecInVec.doubleList->at(2)[1], deserialized.doubleList->at(2)[1]);
+    ASSERT_EQ(vecInVec.doubleList->at(2)[2], deserialized.doubleList->at(2)[2]);
+}
+
+TEST(OptionalVectorInVectorClass, Serialization)
+{
+    struct MyClass
+    {
+        std::optional<std::vector<std::vector<double>>> innerDoubleList;
+
+        BSON_DEFINE_TYPE(MyClass, innerDoubleList)
+    };
+
+    struct VectorInVectorClass
+    {
+        std::optional<std::vector<std::vector<MyClass>>> doubleList;
+
+        BSON_DEFINE_TYPE(VectorInVectorClass, doubleList)
+    };
+
+    VectorInVectorClass vecInVec;
+    std::vector<std::vector<MyClass>> doubleList;
+    for (int i = 0; i < 3; ++i)
+    {
+        std::vector<MyClass> innerVec;
+        for (int j = 0; j < 3; ++j)
+        {
+            MyClass myClass;
+            std::vector<std::vector<double>> innerDoubleVec;
+            for (int k = 0; k < 3; ++k)
+            {
+                std::vector<double> innerDouble;
+                for (int l = 0; l < 3; ++l)
+                {
+                    innerDouble.emplace_back(i + j + k + l);
+                }
+                innerDoubleVec.emplace_back(innerDouble);
+            }
+            myClass.innerDoubleList = innerDoubleVec;
+            innerVec.emplace_back(myClass);
+        }
+        doubleList.emplace_back(innerVec);
+    }
+    vecInVec.doubleList = doubleList;
+
+    const auto bson = VectorInVectorClass::toBSON(vecInVec);
+
+    ASSERT_EQ(vecInVec.doubleList->at(0)[0].innerDoubleList->at(0)[0], bson["doubleList"][0][0]["innerDoubleList"][0][0].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(0)[0].innerDoubleList->at(0)[1], bson["doubleList"][0][0]["innerDoubleList"][0][1].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(0)[0].innerDoubleList->at(0)[2], bson["doubleList"][0][0]["innerDoubleList"][0][2].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(0)[0].innerDoubleList->at(1)[0], bson["doubleList"][0][0]["innerDoubleList"][1][0].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(0)[0].innerDoubleList->at(1)[1], bson["doubleList"][0][0]["innerDoubleList"][1][1].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(0)[0].innerDoubleList->at(1)[2], bson["doubleList"][0][0]["innerDoubleList"][1][2].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(0)[0].innerDoubleList->at(2)[0], bson["doubleList"][0][0]["innerDoubleList"][2][0].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(0)[0].innerDoubleList->at(2)[1], bson["doubleList"][0][0]["innerDoubleList"][2][1].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(0)[0].innerDoubleList->at(2)[2], bson["doubleList"][0][0]["innerDoubleList"][2][2].get_double().value);
+
+    ASSERT_EQ(vecInVec.doubleList->at(1)[0].innerDoubleList->at(0)[0], bson["doubleList"][1][0]["innerDoubleList"][0][0].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(1)[0].innerDoubleList->at(0)[1], bson["doubleList"][1][0]["innerDoubleList"][0][1].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(1)[0].innerDoubleList->at(0)[2], bson["doubleList"][1][0]["innerDoubleList"][0][2].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(1)[0].innerDoubleList->at(1)[0], bson["doubleList"][1][0]["innerDoubleList"][1][0].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(1)[0].innerDoubleList->at(1)[1], bson["doubleList"][1][0]["innerDoubleList"][1][1].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(1)[0].innerDoubleList->at(1)[2], bson["doubleList"][1][0]["innerDoubleList"][1][2].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(1)[0].innerDoubleList->at(2)[0], bson["doubleList"][1][0]["innerDoubleList"][2][0].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(1)[0].innerDoubleList->at(2)[1], bson["doubleList"][1][0]["innerDoubleList"][2][1].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(1)[0].innerDoubleList->at(2)[2], bson["doubleList"][1][0]["innerDoubleList"][2][2].get_double().value);
+
+    ASSERT_EQ(vecInVec.doubleList->at(2)[0].innerDoubleList->at(0)[0], bson["doubleList"][2][0]["innerDoubleList"][0][0].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(2)[0].innerDoubleList->at(0)[1], bson["doubleList"][2][0]["innerDoubleList"][0][1].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(2)[0].innerDoubleList->at(0)[2], bson["doubleList"][2][0]["innerDoubleList"][0][2].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(2)[0].innerDoubleList->at(1)[0], bson["doubleList"][2][0]["innerDoubleList"][1][0].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(2)[0].innerDoubleList->at(1)[1], bson["doubleList"][2][0]["innerDoubleList"][1][1].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(2)[0].innerDoubleList->at(1)[2], bson["doubleList"][2][0]["innerDoubleList"][1][2].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(2)[0].innerDoubleList->at(2)[0], bson["doubleList"][2][0]["innerDoubleList"][2][0].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(2)[0].innerDoubleList->at(2)[1], bson["doubleList"][2][0]["innerDoubleList"][2][1].get_double().value);
+    ASSERT_EQ(vecInVec.doubleList->at(2)[0].innerDoubleList->at(2)[2], bson["doubleList"][2][0]["innerDoubleList"][2][2].get_double().value);
+}
+
+TEST(OptionalVectorInVectorClass, Deserialization)
+{
+
+    struct MyClass
+    {
+        std::optional<std::vector<std::vector<double>>> innerDoubleList;
+
+        BSON_DEFINE_TYPE(MyClass, innerDoubleList)
+    };
+
+    struct VectorInVectorClass
+    {
+        std::optional<std::vector<std::vector<MyClass>>> doubleList;
+
+        BSON_DEFINE_TYPE(VectorInVectorClass, doubleList)
+    };
+
+    VectorInVectorClass vecInVec;
+    std::vector<std::vector<MyClass>> doubleList;
+    for (int i = 0; i < 3; ++i)
+    {
+        std::vector<MyClass> innerVec;
+        for (int j = 0; j < 3; ++j)
+        {
+            MyClass myClass;
+            std::vector<std::vector<double>> innerDoubleVec;
+            for (int k = 0; k < 3; ++k)
+            {
+                std::vector<double> innerDouble;
+                for (int l = 0; l < 3; ++l)
+                {
+                    innerDouble.emplace_back(i + j + k + l);
+                }
+                innerDoubleVec.emplace_back(innerDouble);
+            }
+            myClass.innerDoubleList = innerDoubleVec;
+            innerVec.emplace_back(myClass);
+        }
+        doubleList.emplace_back(innerVec);
+    }
+    vecInVec.doubleList = doubleList;
+
+    const auto bson = VectorInVectorClass::toBSON(vecInVec);
+    const auto deserialized = VectorInVectorClass::fromBSON(bson);
+
+    ASSERT_EQ(vecInVec.doubleList->at(0)[0].innerDoubleList->at(0)[0], deserialized.doubleList->at(0)[0].innerDoubleList->at(0)[0]);
+    ASSERT_EQ(vecInVec.doubleList->at(0)[0].innerDoubleList->at(0)[1], deserialized.doubleList->at(0)[0].innerDoubleList->at(0)[1]);
+    ASSERT_EQ(vecInVec.doubleList->at(0)[0].innerDoubleList->at(0)[2], deserialized.doubleList->at(0)[0].innerDoubleList->at(0)[2]);
+    ASSERT_EQ(vecInVec.doubleList->at(0)[0].innerDoubleList->at(1)[0], deserialized.doubleList->at(0)[0].innerDoubleList->at(1)[0]);
+    ASSERT_EQ(vecInVec.doubleList->at(0)[0].innerDoubleList->at(1)[1], deserialized.doubleList->at(0)[0].innerDoubleList->at(1)[1]);
+    ASSERT_EQ(vecInVec.doubleList->at(0)[0].innerDoubleList->at(1)[2], deserialized.doubleList->at(0)[0].innerDoubleList->at(1)[2]);
+    ASSERT_EQ(vecInVec.doubleList->at(0)[0].innerDoubleList->at(2)[0], deserialized.doubleList->at(0)[0].innerDoubleList->at(2)[0]);
+    ASSERT_EQ(vecInVec.doubleList->at(0)[0].innerDoubleList->at(2)[1], deserialized.doubleList->at(0)[0].innerDoubleList->at(2)[1]);
+    ASSERT_EQ(vecInVec.doubleList->at(0)[0].innerDoubleList->at(2)[2], deserialized.doubleList->at(0)[0].innerDoubleList->at(2)[2]);
+
+    ASSERT_EQ(vecInVec.doubleList->at(1)[0].innerDoubleList->at(0)[0], deserialized.doubleList->at(1)[0].innerDoubleList->at(0)[0]);
+    ASSERT_EQ(vecInVec.doubleList->at(1)[0].innerDoubleList->at(0)[1], deserialized.doubleList->at(1)[0].innerDoubleList->at(0)[1]);
+    ASSERT_EQ(vecInVec.doubleList->at(1)[0].innerDoubleList->at(0)[2], deserialized.doubleList->at(1)[0].innerDoubleList->at(0)[2]);
+    ASSERT_EQ(vecInVec.doubleList->at(1)[0].innerDoubleList->at(1)[0], deserialized.doubleList->at(1)[0].innerDoubleList->at(1)[0]);
+    ASSERT_EQ(vecInVec.doubleList->at(1)[0].innerDoubleList->at(1)[1], deserialized.doubleList->at(1)[0].innerDoubleList->at(1)[1]);
+    ASSERT_EQ(vecInVec.doubleList->at(1)[0].innerDoubleList->at(1)[2], deserialized.doubleList->at(1)[0].innerDoubleList->at(1)[2]);
+    ASSERT_EQ(vecInVec.doubleList->at(1)[0].innerDoubleList->at(2)[0], deserialized.doubleList->at(1)[0].innerDoubleList->at(2)[0]);
+    ASSERT_EQ(vecInVec.doubleList->at(1)[0].innerDoubleList->at(2)[1], deserialized.doubleList->at(1)[0].innerDoubleList->at(2)[1]);
+    ASSERT_EQ(vecInVec.doubleList->at(1)[0].innerDoubleList->at(2)[2], deserialized.doubleList->at(1)[0].innerDoubleList->at(2)[2]);
+
+    ASSERT_EQ(vecInVec.doubleList->at(2)[0].innerDoubleList->at(0)[0], deserialized.doubleList->at(2)[0].innerDoubleList->at(0)[0]);
+    ASSERT_EQ(vecInVec.doubleList->at(2)[0].innerDoubleList->at(0)[1], deserialized.doubleList->at(2)[0].innerDoubleList->at(0)[1]);
+    ASSERT_EQ(vecInVec.doubleList->at(2)[0].innerDoubleList->at(0)[2], deserialized.doubleList->at(2)[0].innerDoubleList->at(0)[2]);
+    ASSERT_EQ(vecInVec.doubleList->at(2)[0].innerDoubleList->at(1)[0], deserialized.doubleList->at(2)[0].innerDoubleList->at(1)[0]);
+    ASSERT_EQ(vecInVec.doubleList->at(2)[0].innerDoubleList->at(1)[1], deserialized.doubleList->at(2)[0].innerDoubleList->at(1)[1]);
+    ASSERT_EQ(vecInVec.doubleList->at(2)[0].innerDoubleList->at(1)[2], deserialized.doubleList->at(2)[0].innerDoubleList->at(1)[2]);
+    ASSERT_EQ(vecInVec.doubleList->at(2)[0].innerDoubleList->at(2)[0], deserialized.doubleList->at(2)[0].innerDoubleList->at(2)[0]);
+    ASSERT_EQ(vecInVec.doubleList->at(2)[0].innerDoubleList->at(2)[1], deserialized.doubleList->at(2)[0].innerDoubleList->at(2)[1]);
+    ASSERT_EQ(vecInVec.doubleList->at(2)[0].innerDoubleList->at(2)[2], deserialized.doubleList->at(2)[0].innerDoubleList->at(2)[2]);
 }

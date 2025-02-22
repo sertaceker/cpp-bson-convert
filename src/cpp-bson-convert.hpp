@@ -1,7 +1,7 @@
 /*
 
 Modern Bson Serialization/Deserialization library for C++ (17+)
-version 1.3.0
+version 1.3.1
 https://github.com/sertaceker/cpp-bson-convert
 
 If you encounter any issues, please submit a ticket at https://github.com/sertaceker/cpp-bson-convert/issues
@@ -362,7 +362,7 @@ return instance;                                        \
      * @param value Value of the member
      */
     template <typename T>
-    std::enable_if_t<!is_primitive_v<T>> serializeMember(bsoncxx::v_noabi::builder::basic::document& doc, const std::string& key, const std::optional<std::vector<T>>& value)
+    std::enable_if_t<is_not_primitive_and_not_vector_v<T>> serializeMember(bsoncxx::v_noabi::builder::basic::document& doc, const std::string& key, const std::optional<std::vector<T>>& value)
     {
         if (value.has_value())
         {
@@ -370,6 +370,46 @@ return instance;                                        \
             for (const auto& el : value.value())
             {
                 arr.append(T::toBSON(el).view());
+            }
+            doc.append(bsoncxx::v_noabi::builder::basic::kvp(key, arr));
+            return;
+        }
+        doc.append(bsoncxx::v_noabi::builder::basic::kvp(key, bsoncxx::v_noabi::types::b_null{}));
+    }
+
+    /**
+     * @brief Serialize a non primitive optional vector in vector member to a BSON document
+     * @tparam T Type of the member
+     * @param doc BSON document to serialize to
+     * @param key Key of the member in the BSON document
+     * @param value Value of the member
+     */
+    template <typename T>
+    std::enable_if_t<is_not_primitive_and_vector_v<T>> serializeMember(bsoncxx::v_noabi::builder::basic::document& doc, const std::string& key, const std::optional<std::vector<T>>& value)
+    {
+        if (value.has_value())
+        {
+            bsoncxx::v_noabi::builder::basic::array arr;
+            for (const auto& el : *value)
+            {
+                if constexpr (is_primitive_v<typename T::value_type>)
+                {
+                    bsoncxx::v_noabi::builder::basic::array innerArr;
+                    for (const auto& innerEl : el)
+                    {
+                        innerArr.append(innerEl);
+                    }
+                    arr.append(innerArr);
+                }
+                else
+                {
+                    bsoncxx::v_noabi::builder::basic::array innerArr;
+                    for (const auto& innerEl : el)
+                    {
+                        innerArr.append(T::value_type::toBSON(innerEl).view());
+                    }
+                    arr.append(innerArr);
+                }
             }
             doc.append(bsoncxx::v_noabi::builder::basic::kvp(key, arr));
             return;
