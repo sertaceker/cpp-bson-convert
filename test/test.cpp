@@ -951,3 +951,37 @@ TEST(OptionalVectorInVectorClass, Deserialization)
     ASSERT_EQ(vecInVec.doubleList->at(2)[0].innerDoubleList->at(2)[1], deserialized.doubleList->at(2)[0].innerDoubleList->at(2)[1]);
     ASSERT_EQ(vecInVec.doubleList->at(2)[0].innerDoubleList->at(2)[2], deserialized.doubleList->at(2)[0].innerDoubleList->at(2)[2]);
 }
+
+TEST(BsonObject, Serialization)
+{
+    struct BsonObject
+    {
+        bsoncxx::document::view_or_value bson;
+
+        BSON_DEFINE_TYPE(BsonObject, bson)
+    };
+
+    BsonObject bsonObject;
+    bsonObject.bson = bsoncxx::from_json(R"({"key": "value"})");
+
+    const auto bson = BsonObject::toBSON(bsonObject);
+    ASSERT_EQ(bsonObject.bson.view(), bson["bson"].get_document().view());
+}
+
+TEST(BsonObject, Deserialization)
+{
+    struct BsonObject
+    {
+        bsoncxx::document::view_or_value bson;
+
+        BSON_DEFINE_TYPE(BsonObject, bson)
+    };
+
+    BsonObject bsonObject;
+    bsonObject.bson = bsoncxx::from_json(R"({"key": "value"})");
+
+    const auto bson = BsonObject::toBSON(bsonObject);
+    const auto deserialized = BsonObject::fromBSON(bson);
+
+    ASSERT_EQ(bsonObject.bson.view(), deserialized.bson.view());
+}

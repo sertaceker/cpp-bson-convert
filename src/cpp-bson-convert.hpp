@@ -71,6 +71,10 @@ SOFTWARE.
     template <typename T>
     inline constexpr bool is_not_primitive_and_vector_v = !is_primitive_v<T> && is_std_vector_v<T>;
 
+    template <typename T>
+    inline constexpr bool is_bsoncxx_v = std::is_same_v<T, bsoncxx::v_noabi::document::view_or_value>;
+
+
     template <class>
     inline constexpr bool always_false_v = false;
 
@@ -145,6 +149,10 @@ SOFTWARE.
         else if constexpr (std::is_same_v<T, bsoncxx::v_noabi::oid>)
         {
             return element.get_oid().value;
+        }
+        else if constexpr (is_bsoncxx_v<T>)
+        {
+            return element.get_document().view();
         }
         else if constexpr (std::is_class_v<T>)
         {
@@ -425,9 +433,15 @@ return instance;                                        \
      * @param value Value of the member
      */
     template <typename T>
-    std::enable_if_t<!is_primitive_v<T> && !is_std_vector_v<T> && !std::__is_optional_v<T>> serializeMember(bsoncxx::v_noabi::builder::basic::document& doc, const std::string& key, const T& value)
+    std::enable_if_t<!is_primitive_v<T> && !is_std_vector_v<T> && !std::__is_optional_v<T> && !is_bsoncxx_v<T>> serializeMember(bsoncxx::v_noabi::builder::basic::document& doc, const std::string& key, const T& value)
     {
         doc.append(bsoncxx::v_noabi::builder::basic::kvp(key, T::toBSON(value).view()));
+    }
+
+    template <typename T>
+    std::enable_if_t<!is_primitive_v<T> && !is_std_vector_v<T> && !std::__is_optional_v<T> && is_bsoncxx_v<T>> serializeMember(bsoncxx::v_noabi::builder::basic::document& doc, const std::string& key, const T& value)
+    {
+        doc.append(bsoncxx::v_noabi::builder::basic::kvp(key, value));
     }
 
     /**
