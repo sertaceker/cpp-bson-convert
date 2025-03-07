@@ -1,7 +1,7 @@
 /*
 
 Modern Bson Serialization/Deserialization library for C++ (17+)
-version 1.3.1
+version 1.3.2
 https://github.com/sertaceker/cpp-bson-convert
 
 If you encounter any issues, please submit a ticket at https://github.com/sertaceker/cpp-bson-convert/issues
